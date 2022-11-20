@@ -61,12 +61,12 @@ impl Grid {
         }
         Ok(())
     }
-    pub fn empties(&self) -> Vec<(usize, usize,&Cell)> {
+    pub fn empties(&self) -> Vec<(usize, usize)> {
         let mut infos = vec![];
         for (i,cell) in self.cells.iter().enumerate() {
             if cell == &Cell::Empty {
                 let (x,y) = self.to_coord(i);
-                infos.push((x,y,cell));
+                infos.push((x,y));
             }
         }
         infos
