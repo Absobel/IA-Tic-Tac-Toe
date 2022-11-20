@@ -1,47 +1,78 @@
 mod grid; use grid::{Grid,Cell};
 mod player; use player::{Player};
+mod launch_options; use launch_options::*;
 
 use std::io;
-
-
-
-
 
 fn main() {
     println!("\n\nGreetings professor Falken.");
     println!("Shall we play a game?\n");
-    println!("The game is Tic Tac Toe.");
-    println!("You will be prompted to enter the coordinates of your move.");
-    println!("The coordinates are 0 indexed, so the top left corner is 0, 0.\n");
-    println!("You are the X's and I am the O's. Who begins? (you/me)\n");
 
-    let stdin = io::stdin();
-    let mut input = String::new();
-    stdin.read_line(&mut input).expect("Could not read user input");
+    let player: Player = Player::new(Cell::P1);
+    let ai: Player = Player::new(Cell::P2);
 
-    let mut current_player = Cell::Empty;
+    let mut current_player = &player;
+    
+    let mut grid = Grid::new(WIDTH, LENGTH, CHARS, WIN);
+
+    println!("");
+    grid.display().expect("Could not display the grid");
+    println!("");
+
     loop {
-        match input.trim() {
-            "you" => current_player = Cell::O,
-            "me" => current_player = Cell::X,
-            _ => println!("I don't understand."),
+        let (mut x,mut y) = (0,0);
+        match current_player.get_cell() {
+            Cell::P1 => {
+                let stdin = io::stdin();
+                println!("Your turn:");
+                let mut input = String::new();
+                stdin.read_line(&mut input).expect("Could not read the input");
+                loop {
+                    match input.trim().parse::<usize>() {
+                        Ok(n) => {
+                            if grid.is_cell_smth(x,y).expect("Could not check if the cell is empty") {
+                                println!("This cell is already taken");
+                                input = String::new();
+                                stdin.read_line(&mut input).expect("Could not read the input");
+                            }
+                            else {
+                                (x,y) = grid.to_coord(n);
+                                break;
+                            }
+                        },
+                        Err(_) => {
+                            println!("Please enter a number");
+                        }
+                    }
+                }
+            },
+            Cell::P2 => {
+                println!("AI turn:");
+                (x,y) = ai.best_move(&player, &grid).expect("Could not find the best move");
+                grid.set(x,y,Cell::P2).expect("Could not set the cell");
+            },
+            _ => panic!("Invalid player"),
         }
-        if current_player != Cell::Empty {
+
+        grid.set(x,y,current_player.get_cell()).expect("Could not set the cell");
+        if grid.is_move_win(x,y,current_player.get_cell()).expect("Could not check if the move is a win") {
+            println!("");
+            println!("{:?} wins!", current_player.get_cell());
             break;
         }
-    }
-
-    let mut grid = Grid::new(3, 3);
-
-    match current_player {
-        Cell::X => {
-
+        else if grid.is_full() {
+            println!("");
+            println!("It's a draw!");
+            break;
         }
-        Cell::O => {
+        println!("");
+        grid.display().expect("Could not display the grid");
+        println!("");
 
-        }
-        _ => {
-            println!("Something went wrong.");
+        match current_player.get_cell() {
+            Cell::P1 => current_player = &ai,
+            Cell::P2 => current_player = &player,
+            _ => panic!("Invalid player"),
         }
     }
     

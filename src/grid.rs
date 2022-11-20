@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug, Copy)]
 pub enum Cell {
     Empty,
     P1,
@@ -40,7 +40,8 @@ impl Grid {
     }
     pub fn set(&mut self, x: usize, y: usize, cell: Cell) -> Result<(), String> {
         if x < self.width && y < self.length {
-            self.cells[self.to_index(x,y)] = cell;
+            let idx = self.to_index(x, y);
+            self.cells[idx] = cell;
             Ok(())
         } else {
             Err(format!("Out of bounds: {}/{}, {}/{}", x, self.width, y, self.length))
@@ -83,5 +84,11 @@ impl Grid {
     }
     pub fn is_full(&self) -> bool {
         self.cells.iter().all(|c| *c != Cell::Empty)
+    }
+    pub fn is_cell_smth (&self, x: usize, y: usize) -> Result<bool, String> {
+        if x >= self.width || y >= self.length {
+            return Err(format!("Out of bounds: {}/{}, {}/{}", x, self.width, y,self.length));
+        }
+        Ok(self.cells[self.to_index(x, y)] != Cell::Empty)
     }
 }

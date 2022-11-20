@@ -9,7 +9,9 @@ impl Player {
             cell: cell,
         }
     }
-
+    pub fn get_cell(&self) -> Cell {
+        self.cell
+    }
     pub fn move_score(&self, opponent: &Player, grid: &Grid, (x,y): (usize,usize)) -> Result<isize,String> {
         let mut score = 0;
     
@@ -23,7 +25,7 @@ impl Player {
                 score += 0;
             }
             else {
-                let empties = test_grid.empties();
+                let mut empties = test_grid.empties();
                 let opponent_move = opponent.best_move(self, &test_grid)?;
                 empties.remove(grid.to_index(opponent_move.0, opponent_move.1));
                 if test_grid.is_move_win(opponent_move.0, opponent_move.1, opponent.cell)? {
@@ -45,9 +47,11 @@ impl Player {
         Ok(score)
     }
     pub fn best_move(&self, opponent: &Player, grid: &Grid) -> Result<(usize,usize), String> {
-        let scores = grid.empties().iter().map(|(x,y)| {
-            (*x,*y,self.move_score(opponent, grid, (*x,*y)).expect("Could not calculate the score of the move"))
-        });
+        let mut scores = vec![];
+        let empties = grid.empties();
+        for (x,y) in empties {
+            scores.push((x,y,self.move_score(opponent, grid, (x,y)).expect("Error in move_score")));
+        }
         let mut best_score = 0;
         let mut best_move = (0,0);
         for (x,y,score) in scores {
