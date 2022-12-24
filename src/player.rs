@@ -1,4 +1,5 @@
 use super::grid::{Grid,Cell};
+use super::launch_options::*;
 
 pub struct Player {
     cell: Cell,
@@ -12,54 +13,57 @@ impl Player {
     pub fn get_cell(&self) -> Cell {
         self.cell
     }
-    pub fn move_score(&self, opponent: &Player, grid: &Grid, (x,y): (usize,usize)) -> Result<isize,String> {
-        let mut score = 0;
-    
-        if grid.is_move_win(x,y, self.cell)? {
-            score += 100;
-        }
-        else {
-            let mut test_grid = grid.clone();
-            test_grid.set(x,y,self.cell)?;
-            if test_grid.is_full() {
-                score += 0;
-            }
-            else {
-                let mut empties = test_grid.empties();
-                let opponent_move = opponent.best_move(self, &test_grid)?;
-                empties.remove(grid.to_index(opponent_move.0, opponent_move.1));
-                if test_grid.is_move_win(opponent_move.0, opponent_move.1, opponent.cell)? {
-                    score -= 100;
-                }
-                else {
-                    test_grid.set(opponent_move.0, opponent_move.1, opponent.cell)?;
-                    if test_grid.is_full() {
-                        score += 0;
-                    }
-                    else {
-                        for (x,y) in empties {
-                            score += self.move_score(opponent, &test_grid, (x,y))? as isize;
+
+    // Renvoie le score d'un coup
+    pub fn move_score(
+                &self, 
+                opponent: &Player, 
+                not_real_grid: &mut Grid, 
+                (x,y): (usize,usize),
+                nb_iter_best_move: usize
+            ) -> Result<f32,String> {
+        
+        let mut score: f32 = 0.0;
+        if !not_real_grid.is_full() && nb_iter_best_move < NB_ITER_MAX {
+            not_real_grid.set(x, y, self.cell)?;
+            match not_real_grid.is_win() {
+                Some(_) => {
+                    score = 1.0;
+                },
+                None => {
+                    if !not_real_grid.is_full() {
+                        if DEBUG {
+                            println!("{nb_iter_best_move}");
                         }
+                        score = score - 0.5*opponent.best_move(self, not_real_grid, nb_iter_best_move+1)?.2;
                     }
                 }
             }
         }
         Ok(score)
     }
-    pub fn best_move(&self, opponent: &Player, grid: &Grid) -> Result<(usize,usize), String> {
-        let mut scores = vec![];
-        let empties = grid.empties();
-        for (x,y) in empties {
-            scores.push((x,y,self.move_score(opponent, grid, (x,y)).expect("Error in move_score")));
+
+    // Renvoie le meilleur coup
+    pub fn best_move(
+                &self, 
+                opponent: &Player, 
+                grid: &Grid, 
+                nb_iter_best_move: usize
+            ) -> Result<(usize,usize,f32), String> {
+        
+                let empties = grid.empties();
+        let mut scores : Vec<f32> = Vec::new();
+        for (x,y) in empties.iter() {
+            let mut not_real_grid = grid.clone();
+            scores.push(self.move_score(opponent, &mut not_real_grid, (*x,*y), nb_iter_best_move)?);
         }
-        let mut best_score = 0;
-        let mut best_move = (0,0);
-        for (x,y,score) in scores {
-            if score > best_score {
-                best_score = score;
-                best_move = (x,y);
+        let mut best_score_idx = 0;
+        for i in 1..scores.len() {
+            if scores[i] > scores[best_score_idx] {
+                best_score_idx = i;
             }
         }
-        Ok(best_move)
+        let var_best_move = empties[best_score_idx];
+        Ok((var_best_move.0, var_best_move.1, scores[best_score_idx]))
     }
-}
+} 

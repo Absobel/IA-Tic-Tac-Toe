@@ -1,8 +1,11 @@
 // à changer pour quand je ferai l'interface terminal
 #![allow(dead_code)]
 
-pub const WIDTH: usize = 3;
-pub const LENGTH: usize = 3;
 pub const CHARS: [char; 3] = ['.', 'X', 'O'];
-pub const FIRST_PLAYER: usize = 1;
-pub const WIN: usize = 3;
+
+pub const NB_ALIGNES: usize = 3;
+
+pub const SIZE: usize = 3;
+pub const NB_ITER_MAX: usize = 20;
+
+pub const DEBUG: bool = false;
