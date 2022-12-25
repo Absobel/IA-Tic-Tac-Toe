@@ -76,7 +76,15 @@ impl Grid {
                 return Some(cell);
             }
         }
-        self.win_diagonales()
+        for k in -(SIZE as isize -1)..(SIZE as isize) {
+            if let Some(cell) = self.win_diagonale((1, k)) {
+                return Some(cell);
+            }
+            if let Some(cell) = self.win_diagonale((-1, k)) {
+                return Some(cell);
+            }
+        }
+        None
     }
 
     pub fn is_full(&self) -> bool {
@@ -87,28 +95,71 @@ impl Grid {
 
     // Internal fucntions
 
+    // Renvoie Some(Cell) si NB_ALIGNES cases de la ligne i sont identiques, None sinon.
     fn win_ligne(&self, i: usize) -> Option<Cell> {
-        if self.cells[i*SIZE] != Cell::Empty && self.cells[i*SIZE] == self.cells[i*SIZE+1] && self.cells[i*SIZE] == self.cells[i*SIZE+2] {
-            Some(self.cells[i*SIZE])
-        } else {
-            None
+        for j in 0..SIZE-NB_ALIGNES {
+            let mut win = true;
+            let cell = self.cells[self.to_index(j, i)];
+            if cell != Cell::Empty {
+                for k in 1..NB_ALIGNES {
+                    win = win && self.cells[self.to_index(j+k, i)] == cell;
+                }
+                if win {
+                    return Some(cell);
+                }   
+            }
         }
+        None
     }
     fn win_colonne(&self, j: usize) -> Option<Cell> {
-        if self.cells[j] != Cell::Empty && self.cells[j] == self.cells[j+SIZE] && self.cells[j] == self.cells[j+2*SIZE] {
-            Some(self.cells[j])
-        } else {
-            None
+        for i in 0..SIZE-NB_ALIGNES {
+            let mut win = true;
+            let cell = self.cells[self.to_index(j, i)];
+            if cell != Cell::Empty {
+                for k in 1..NB_ALIGNES {
+                    win = win && self.cells[self.to_index(j, i+k)] == cell;
+                }
+                if win {
+                    return Some(cell);
+                }   
+            }
         }
+        None
     }
-    fn win_diagonales(&self) -> Option<Cell> {
-        if self.cells[0] != Cell::Empty && self.cells[0] == self.cells[4] && self.cells[0] == self.cells[8] {
-            Some(self.cells[0])
-        } else if self.cells[2] != Cell::Empty && self.cells[2] == self.cells[4] && self.cells[2] == self.cells[6] {
-            Some(self.cells[2])
-        } else {
-            None
+    // On numérote les diagonales de la grille comme suit: (type_diag, num_diag)
+    //   0  1 2 3         3 2 1  0
+    //  -1 [. . . .]   [. . . .] -1
+    //  -2 [. . . .]   [. . . .] -2
+    //  -3 [. . . .]   [. . . .] -3
+    //     [. . . .]   [. . . .]
+    // type_diag = 1   type_diag = -1
+    fn win_diagonale(&self, (type_diag, num_diag): (isize, isize)) -> Option<Cell> {
+        let size_diag = SIZE - num_diag.abs() as usize;
+        if size_diag < NB_ALIGNES {
+            return None;
         }
+        for i in 0..size_diag-NB_ALIGNES {
+            let mut win = true;
+            let cell = self.cells[self.to_index(i, i)];
+            if cell != Cell::Empty {
+                for k in 1..NB_ALIGNES {
+                    let (x,y) = if type_diag == 1 && num_diag >= 0 {
+                        (i+k+num_diag as usize, i+k)
+                    } else if type_diag == 1 && num_diag < 0 {
+                        (i+k, i+k-num_diag as usize)
+                    } else if type_diag == -1 && num_diag >= 0 {
+                        (i+k+num_diag as usize, SIZE-1-i-k)
+                    } else {
+                        (i+k, SIZE-1-i-k-num_diag as usize)
+                    };
+                    win = win && self.cells[self.to_index(x, y)] == cell;
+                }
+                if win {
+                    return Some(cell);
+                }   
+            }
+        }
+        None
     }
 
     // Convertit les coordonnées en index dans le vecteur décrivant la grille
