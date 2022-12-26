@@ -5,6 +5,7 @@ mod launch_options; use launch_options::*;
 use std::io;
 use std::io::Write;
 
+
 fn input_coord() -> Result<(usize,usize),String> {                             // Faudrait rendre ça plus propre
     print!("Coordinates : ");
     io::stdout().flush().expect("Could not flush stdout");
