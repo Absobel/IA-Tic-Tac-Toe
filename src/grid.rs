@@ -25,13 +25,13 @@ impl Grid {
         let idx = self.to_index(x, y);
         if x < SIZE && y < SIZE {
             if self.cells[idx] != Cell::Empty {
-                Err(format!("\nCell already occupied.\n"))
+                Err("\nCell already occupied.\n".to_string())
             } else {
                 self.cells[idx] = cell;
                 Ok(())
             }
         } else {
-            Err(format!("Out of bounds: {x}/{SIZE}, {y}/{SIZE}"))
+            Err(format!("Out of bounds: {x}/{SIZE}, {y}/{SIZE}\n"))
         }
     }
 
@@ -67,24 +67,20 @@ impl Grid {
     } 
 
     // Renvoie Some(Cell) si la grille est gagnée, None sinon.
-    pub fn is_win(&self) -> Option<Cell> {
-        for i in 0..SIZE {
-            if let Some(cell) = self.win_ligne(i) {
-                return Some(cell);
-            }
-            if let Some(cell) = self.win_colonne(i) {
-                return Some(cell);
+    pub fn is_win_in(&self, (x,y): (usize,usize)) -> bool {
+        let cell = self.cells[self.to_index(x, y)];
+        if cell == Cell::Empty {
+            return false;
+        }
+        for (dx,dy) in &[(1,0), (0,1), (1,1), (1,-1)] {
+            let mut n = 1;
+            n += self.nb_alignes_dir((x,y), (*dx,*dy)).expect("Bad direction");
+            n += self.nb_alignes_dir((x,y), (-dx,-dy)).expect("Bad direction");
+            if n >= NB_ALIGNES {
+                return true;
             }
         }
-        for k in -(SIZE as isize -1)..(SIZE as isize) {
-            if let Some(cell) = self.win_diagonale((1, k)) {
-                return Some(cell);
-            }
-            if let Some(cell) = self.win_diagonale((-1, k)) {
-                return Some(cell);
-            }
-        }
-        None
+        false
     }
 
     pub fn is_full(&self) -> bool {
@@ -95,71 +91,37 @@ impl Grid {
 
     // Internal fucntions
 
-    // Renvoie Some(Cell) si NB_ALIGNES cases de la ligne i sont identiques, None sinon.
-    fn win_ligne(&self, i: usize) -> Option<Cell> {
-        for j in 0..SIZE-NB_ALIGNES {
-            let mut win = true;
-            let cell = self.cells[self.to_index(j, i)];
-            if cell != Cell::Empty {
-                for k in 1..NB_ALIGNES {
-                    win = win && self.cells[self.to_index(j+k, i)] == cell;
-                }
-                if win {
-                    return Some(cell);
-                }   
-            }
+    fn voisin(&self, (x,y) : (usize,usize), (dx,dy) : (isize,isize)) -> Option<(usize,usize)> {
+        let (x,y) = (x as isize + dx, y as isize + dy);
+        if x >= 0 && x < SIZE as isize && y >= 0 && y < SIZE as isize {
+            Some((x as usize, y as usize))
+        } else {
+            None
         }
-        None
     }
-    fn win_colonne(&self, j: usize) -> Option<Cell> {
-        for i in 0..SIZE-NB_ALIGNES {
-            let mut win = true;
-            let cell = self.cells[self.to_index(j, i)];
-            if cell != Cell::Empty {
-                for k in 1..NB_ALIGNES {
-                    win = win && self.cells[self.to_index(j, i+k)] == cell;
-                }
-                if win {
-                    return Some(cell);
-                }   
-            }
+    fn is_voisin_same(&self, (x,y): (usize,usize), (dx,dy): (isize, isize)) -> Option<bool> {
+        if let Some((vx,vy)) = self.voisin((x,y), (dx,dy)) {
+            Some(self.cells[self.to_index(vx, vy)] == self.cells[self.to_index(x, y)])
+        } else {
+            None
         }
-        None
     }
-    // On numérote les diagonales de la grille comme suit: (type_diag, num_diag)
-    //   0  1 2 3         3 2 1  0
-    //  -1 [. . . .]   [. . . .] -1
-    //  -2 [. . . .]   [. . . .] -2
-    //  -3 [. . . .]   [. . . .] -3
-    //     [. . . .]   [. . . .]
-    // type_diag = 1   type_diag = -1
-    fn win_diagonale(&self, (type_diag, num_diag): (isize, isize)) -> Option<Cell> {
-        let size_diag = SIZE - num_diag.abs() as usize;
-        if size_diag < NB_ALIGNES {
-            return None;
+    fn nb_alignes_dir(&self, (x,y): (usize, usize), (dx,dy): (isize,isize)) -> Result<usize, String> {
+        if !(-1..=1).contains(&dx) || !(-1..=1).contains(&dy) || (dx,dy) == (0,0) {
+            return Err("dir invalide. dir ne peut être qu'un vecteur vers l'un des 8 voisins de (x,y)".to_string())
         }
-        for i in 0..size_diag-NB_ALIGNES {
-            let mut win = true;
-            let cell = self.cells[self.to_index(i, i)];
-            if cell != Cell::Empty {
-                for k in 1..NB_ALIGNES {
-                    let (x,y) = if type_diag == 1 && num_diag >= 0 {
-                        (i+k+num_diag as usize, i+k)
-                    } else if type_diag == 1 && num_diag < 0 {
-                        (i+k, i+k-num_diag as usize)
-                    } else if type_diag == -1 && num_diag >= 0 {
-                        (i+k+num_diag as usize, SIZE-1-i-k)
-                    } else {
-                        (i+k, SIZE-1-i-k-num_diag as usize)
-                    };
-                    win = win && self.cells[self.to_index(x, y)] == cell;
+        let mut nb_alignes = 0;
+        loop {
+            if let Some(is_same) = self.is_voisin_same((x,y), ((nb_alignes+1)*dx, (nb_alignes+1)*dy)) {
+                if is_same {
+                    nb_alignes += 1;
+                } else {
+                    return Ok(nb_alignes as usize);
                 }
-                if win {
-                    return Some(cell);
-                }   
+            } else {
+                return Ok(nb_alignes as usize);
             }
         }
-        None
     }
 
     // Convertit les coordonnées en index dans le vecteur décrivant la grille

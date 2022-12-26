@@ -7,7 +7,7 @@ pub struct Player {
 impl Player {
     pub fn new (cell: Cell) -> Player {
         Player {
-            cell: cell,
+            cell,
         }
     }
     pub fn get_cell(&self) -> Cell {
@@ -26,18 +26,13 @@ impl Player {
         let mut score: f32 = 0.0;
         if !not_real_grid.is_full() && nb_iter_best_move < NB_ITER_MAX {
             not_real_grid.set(x, y, self.cell)?;
-            match not_real_grid.is_win() {
-                Some(_) => {
-                    score = 1.0;
-                },
-                None => {
-                    if !not_real_grid.is_full() {
-                        if DEBUG {
-                            println!("{nb_iter_best_move}");
-                        }
-                        score = score - 0.5*opponent.best_move(self, not_real_grid, nb_iter_best_move+1)?.2;
-                    }
+            if not_real_grid.is_win_in((x,y)) {
+                score += 1.0;
+            } else if !not_real_grid.is_full() {
+                if DEBUG {
+                    println!("{nb_iter_best_move}");
                 }
+                score -= 0.5*opponent.best_move(self, not_real_grid, nb_iter_best_move+1)?.2;
             }
         }
         Ok(score)

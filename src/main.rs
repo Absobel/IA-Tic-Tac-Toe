@@ -5,6 +5,39 @@ mod launch_options; use launch_options::*;
 use std::io;
 use std::io::Write;
 
+fn input_coord() -> Result<(usize,usize),String> {                             // Faudrait rendre ça plus propre
+    print!("Coordinates : ");
+    io::stdout().flush().expect("Could not flush stdout");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).expect("Failed to read line");
+    let res_input = input.trim();
+    let mut res_input = res_input.split_whitespace();
+    let result2_x = res_input.next();
+    let result2_y = res_input.next();
+
+    let (x,y);
+    let (result_x,result_y);
+    match (result2_x,result2_y) {
+        (Some(pre2_x), Some(pre2_y)) => {
+            result_x = pre2_x.parse::<usize>();
+            result_y = pre2_y.parse::<usize>();
+            match (result_x,result_y) {
+                (Ok(pre_x), Ok(pre_y)) => {
+                    x = pre_x;
+                    y = pre_y;
+                },
+                _ => {
+                    return Err("These are not coordinates. Format : 'nb_column nb_row'.\n".to_string());
+                },
+            }
+        },
+        _ => {
+            return Err("These are not coordinates. Format : 'nb_column nb_row'.\n".to_string());
+        },
+    }
+    Ok((x,y))
+}
+
 fn main() {
     println!("\n\nGreetings professor Falken.");
     println!("Shall we play a game?\n");
@@ -36,23 +69,26 @@ fn main() {
 
     let mut grid = Grid::new();
 
-    println!("");
+    println!();
     grid.display().expect("Could not display the grid");
-    println!("");
+    println!();
 
     println!("You will play by entering the coordinates of the cell you want to play in. Format : 'nb_column nb_row'.\n");
 
     loop {
+        let mut mov: Option<(usize, usize)> = None;
         if current_player_cell == &player_cell {
             println!("Your turn.");
-            print!("Coordinates : ");
-            io::stdout().flush().expect("Could not flush stdout");
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).expect("Failed to read line");
-            let res_input = input.trim();
-            let mut res_input = res_input.split_whitespace();
-            let x = res_input.next().unwrap().parse::<usize>().unwrap();
-            let y = res_input.next().unwrap().parse::<usize>().unwrap();
+            
+            if let Ok((x,y)) = input_coord() {
+                mov = Some((x,y));
+            }
+            else {
+                println!("These are not coordinates. Format : 'nb_column nb_row'.\n");
+                continue;
+            }
+
+            let (x,y) = mov.expect("idk, shouldn't happen");
             match grid.set(x, y, player.get_cell()) {
                 Ok(_) => {},
                 Err(e) => {
@@ -65,28 +101,26 @@ fn main() {
         else {
             println!("My turn.");
             if let Ok((x, y,_)) = ai.best_move(&player, &grid, 1){
+                mov = Some((x,y));
                 grid.set(x, y, ai.get_cell()).expect("Could not set the cell");
             }
             current_player_cell = &player_cell;
         }
 
-        println!("");
+        println!();
         grid.display().expect("Could not display the grid");
-        println!("");
+        println!();
 
-        let cell_won = grid.is_win();
-        match cell_won {
-            Some(cell) => {
-                if cell == player_cell {
-                    println!("You won.");
-                }
-                else {
-                    println!("I won.");
-                }
-                break;
-            },
-            None => {},
+        if grid.is_win_in(mov.expect("idk, shouldn't happen")) {
+            if current_player_cell == &ai_cell {
+                println!("You won.");
+            }
+            if current_player_cell == &player_cell {
+                println!("I won.");
+            }
+            break;
         }
+
         if grid.is_full() {
             println!("It's a draw.");
             break;
