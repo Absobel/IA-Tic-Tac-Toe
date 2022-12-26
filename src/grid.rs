@@ -31,7 +31,7 @@ impl Grid {
                 Ok(())
             }
         } else {
-            Err(format!("Out of bounds: {x}/{SIZE}, {y}/{SIZE}\n"))
+            Err(format!("\nOut of bounds: {x}/{SIZE}, {y}/{SIZE}\n"))
         }
     }
 

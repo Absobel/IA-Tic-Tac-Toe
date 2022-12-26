@@ -10,4 +10,4 @@ Vous pouvez changer les options dans src/launchoptions.rs
 - [ ] Rendre la fonction input plus propre.
 - [ ] Faire en sorte de pouvoir faire PvP et AIvAI.
 - [ ] Faire en sorte de pouvoir changer les options depuis le terminal.
-- [ ] Ameliorer la récursion, si c'est possible.
+- [ ] Ameliorer la récursion, en utilisant des threads.

@@ -85,7 +85,7 @@ fn main() {
                 mov = Some((x,y));
             }
             else {
-                println!("These are not coordinates. Format : 'nb_column nb_row'.\n");
+                println!("\nThese are not coordinates. Format : 'nb_column nb_row'.\n");
                 continue;
             }
 
