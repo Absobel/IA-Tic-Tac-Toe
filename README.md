@@ -3,7 +3,8 @@ Ce projet est une excuse pour faire du rust. C'est un morpion, 1v1, contre une I
 
 ## Utilisation
 [Installez cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html), clonez le repo et lancez la commande `cargo run`.
-Ensuite changez les options dans src/launchoptions.rs
+
+Vous pouvez changer les options dans src/launchoptions.rs
 
 ## TODO
 - [ ] Rendre la fonction input plus propre.
